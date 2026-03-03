@@ -1,0 +1,22 @@
+export const DarkTheme = {
+  name: "dark",
+  screenBackground: "#0a0f1f",
+  background: "#102249",
+  boardBackground: "#0a0f1f",
+  gridColor: "rgba(255, 255, 255, 0.18)",
+  textPrimary: "#f5f5f5",
+  textMuted: "rgba(245,245,245,0.6)",
+  accent: "#23687b",
+  accentSoft: "rgba(94, 242, 255, 0.4)",
+  borderColor: "#04122d",
+  pieces: [
+    "#ff6b81",
+    "#4fc3f7",
+    "#ffb347",
+    "#ffe066",
+    "#51cf66",
+    "#339af0",
+    "#845ef7",
+    "#f06595",
+  ],
+};

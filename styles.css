@@ -1,0 +1,21 @@
+/* Responsive Tetris styling */
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+canvas {
+  border: 1px solid #0f0;
+  background-color: #111;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}

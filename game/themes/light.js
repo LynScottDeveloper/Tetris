@@ -1,0 +1,22 @@
+export const LightTheme = {
+  name: "light",
+  screenBackground: "#7cb5e4",
+  background: "#3996e2",
+  boardBackground: "#7cb5e4",
+  gridColor: "rgba(32, 78, 111, 0.1)",
+  borderColor: "#5a7fa8",
+  textPrimary: "#000000",
+  textMuted: "rgba(22, 31, 52, 0.8)",
+  accent: "#0b629b",
+  accentSoft: "rgba(13,125,199,0.4)",
+  pieces: [
+    "#d60a3b",
+    "#0b8fb9",
+    "#ea8500",
+    "#c9a204",
+    "#0e8a3f",
+    "#0d7dc7",
+    "#6e3bb3",
+    "#c60356",
+  ],
+};

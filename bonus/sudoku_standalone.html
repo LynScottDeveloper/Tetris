@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sudoku</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0.5rem;
+      overflow-x: hidden;
+    }
+
+    .container {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      max-width: 480px;
+      width: 95%;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    h1 {
+      color: #f8fafc;
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .lang-select {
+      padding: 0.4rem 0.6rem;
+      border: none;
+      border-radius: 6px;
+      background: #334155;
+      color: #f8fafc;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.6rem;
+      border: none;
+      border-radius: 8px;
+      background: #334155;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab:hover {
+      background: #475569;
+    }
+
+    .tab.active {
+      background: #8b5cf6;
+      color: #fff;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .welcome-content {
+      text-align: center;
+      padding: 0.75rem 0;
+    }
+
+    .welcome-content h2 {
+      color: #f8fafc;
+      margin-bottom: 0.8rem;
+      font-size: 1.4rem;
+    }
+
+    .welcome-content p {
+      color: #94a3b8;
+      margin-bottom: 0.6rem;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .welcome-content ul {
+      color: #94a3b8;
+      text-align: left;
+      margin: 0.8rem auto;
+      max-width: 280px;
+      padding-left: 1.4rem;
+      font-size: 0.95rem;
+    }
+
+    .welcome-content li {
+      margin-bottom: 0.4rem;
+    }
+
+    .welcome-content .highlight {
+      color: #22d3ee;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 1px;
+      background: #0f172a;
+      border: 3px solid #8b5cf6;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 0 auto 1rem;
+      max-width: 360px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      background: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.1s ease;
+      user-select: none;
+      min-width: 32px;
+      min-height: 32px;
+    }
+
+    .cell:hover {
+      filter: brightness(1.15);
+    }
+
+    .cell.fixed {
+      color: #f8fafc;
+      cursor: default;
+    }
+
+    .cell.user-filled {
+      color: #22d3ee;
+    }
+
+    .cell.selected {
+      background: #3b82f6;
+    }
+
+    .cell.related {
+      background: #475569;
+    }
+
+    .cell.same-number {
+      background: #6366f1;
+    }
+
+    .cell.error {
+      background: #f43f5e;
+      color: #fff;
+    }
+
+    .cell:nth-child(3n):not(:nth-child(9n)) {
+      border-right: 2px solid #8b5cf6;
+    }
+
+    .cell:nth-child(n+19):nth-child(-n+27),
+    .cell:nth-child(n+46):nth-child(-n+54) {
+      border-bottom: 2px solid #8b5cf6;
+    }
+
+    .game-stats {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 0.6rem;
+      color: #94a3b8;
+      font-size: 1rem;
+    }
+
+    .game-stats span {
+      color: #22d3ee;
+      font-weight: 600;
+    }
+
+    .numpad {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .numpad button {
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 8px;
+      background: #334155;
+      color: #f8fafc;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .numpad button:hover {
+      background: #8b5cf6;
+    }
+
+    .numpad button:active {
+      transform: scale(0.95);
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .controls button {
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: #8b5cf6;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .controls button:hover {
+      background: #7c3aed;
+    }
+
+    .controls button.secondary {
+      background: #475569;
+    }
+
+    .controls button.secondary:hover {
+      background: #64748b;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 0.6rem;
+      color: #22d3ee;
+      font-weight: 500;
+      font-size: 0.95rem;
+      min-height: 1.3rem;
+    }
+
+    .scores-list {
+      list-style: none;
+    }
+
+    .scores-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      margin-bottom: 0.5rem;
+      background: #334155;
+      border-radius: 8px;
+      color: #f8fafc;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+
+    .scores-list li:first-child {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #0f172a;
+    }
+
+    .scores-list li:nth-child(2) {
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+      color: #0f172a;
+    }
+
+    .scores-list li:nth-child(3) {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    }
+
+    .scores-empty {
+      text-align: center;
+      color: #64748b;
+      padding: 2rem;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 380px) {
+      .container {
+        padding: 0.8rem;
+        max-width: 95%;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+      }
+
+      .tab {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+      }
+
+      .grid {
+        max-width: 280px;
+      }
+
+      .cell {
+        min-width: 26px;
+        min-height: 26px;
+        font-size: 0.95rem;
+      }
+
+      .numpad button {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+      }
+
+      .controls button {
+        padding: 0.5rem 0.7rem;
+        font-size: 0.75rem;
+      }
+
+      .game-stats {
+        font-size: 0.85rem;
+        gap: 1rem;
+      }
+    }
+
+    .game-stats span {
+      color: #22d3ee;
+      font-weight: 600;
+    }
+
+    .numpad {
+      display: flex;
+      gap: 0.3rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
+    }
+
+    .numpad button {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: #334155;
+      color: #f8fafc;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .numpad button:hover {
+      background: #8b5cf6;
+    }
+
+    .numpad button:active {
+      transform: scale(0.95);
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .controls button {
+      padding: 0.5rem 0.7rem;
+      border: none;
+      border-radius: 6px;
+      background: #8b5cf6;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .controls button:hover {
+      background: #7c3aed;
+    }
+
+    .controls button.secondary {
+      background: #475569;
+    }
+
+    .controls button.secondary:hover {
+      background: #64748b;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 0.5rem;
+      color: #22d3ee;
+      font-weight: 500;
+      font-size: 0.85rem;
+      min-height: 1.2rem;
+    }
+
+    .scores-list {
+      list-style: none;
+    }
+
+    .scores-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.4rem;
+      background: #334155;
+      border-radius: 6px;
+      color: #f8fafc;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+
+    .scores-list li:first-child {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #0f172a;
+    }
+
+    .scores-list li:nth-child(2) {
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+      color: #0f172a;
+    }
+
+    .scores-list li:nth-child(3) {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    }
+
+    .scores-empty {
+      text-align: center;
+      color: #64748b;
+      padding: 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    .confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      animation: confetti-fall 3s ease-out forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Sudoku</h1>
+      <select class="lang-select" id="langSelect">
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+        <option value="fr">FR</option>
+      </select>
+    </div>
+    
+    <div class="tabs">
+      <button class="tab" data-tab="welcome" data-i18n="tab.welcome">Welcome</button>
+      <button class="tab active" data-tab="game" data-i18n="tab.game">Game</button>
+      <button class="tab" data-tab="scores" data-i18n="tab.scores">Top 10</button>
+    </div>
+
+    <div id="welcome" class="tab-content">
+      <div class="welcome-content">
+        <h2 data-i18n="welcome.title">How to Play</h2>
+        <p data-i18n="welcome.desc">Fill the 9×9 grid so each row, column, and 3×3 box contains digits 1-9.</p>
+        <ul>
+          <li data-i18n="welcome.step1"><span class="highlight">Click</span> a cell to select</li>
+          <li data-i18n="welcome.step2"><span class="highlight">Type 1-9</span> or use number pad</li>
+          <li data-i18n="welcome.step3"><span class="highlight">Arrow keys</span> to navigate</li>
+          <li data-i18n="welcome.step4"><span class="highlight">Backspace</span> to clear</li>
+        </ul>
+        <p data-i18n="welcome.score">Earn points for solving quickly!</p>
+      </div>
+    </div>
+
+    <div id="game" class="tab-content active">
+      <div class="game-stats">
+        <div><span data-i18n="game.time">Time</span>: <span id="timer">0:00</span></div>
+        <div><span data-i18n="game.moves">Moves</span>: <span id="moves">0</span></div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="numpad">
+        <button data-num="1">1</button>
+        <button data-num="2">2</button>
+        <button data-num="3">3</button>
+        <button data-num="4">4</button>
+        <button data-num="5">5</button>
+        <button data-num="6">6</button>
+        <button data-num="7">7</button>
+        <button data-num="8">8</button>
+        <button data-num="9">9</button>
+        <button data-num="0">⌫</button>
+      </div>
+      <div class="controls">
+        <button id="newGame" data-i18n="game.newGame">New</button>
+        <button id="reset" class="secondary" data-i18n="game.reset">Reset</button>
+        <button id="check" class="secondary" data-i18n="game.check">Check</button>
+        <button id="solve" class="secondary" data-i18n="game.solve">Solve</button>
+      </div>
+      <div class="message" id="message"></div>
+    </div>
+
+    <div id="scores" class="tab-content">
+      <ul class="scores-list" id="scoresList"></ul>
+      <p class="scores-empty" id="scoresEmpty" data-i18n="scores.empty">No scores yet. Complete a puzzle!</p>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti"></div>
+
+  <script>
+    const translations = {
+      en: {
+        'tab.welcome': 'Welcome',
+        'tab.game': 'Game',
+        'tab.scores': 'Top 10',
+        'welcome.title': 'How to Play',
+        'welcome.desc': 'Fill the 9×9 grid so each row, column, and 3×3 box contains digits 1-9.',
+        'welcome.step1': '<span class="highlight">Click</span> a cell to select',
+        'welcome.step2': '<span class="highlight">Type 1-9</span> or use number pad',
+        'welcome.step3': '<span class="highlight">Arrow keys</span> to navigate',
+        'welcome.step4': '<span class="highlight">Backspace</span> to clear',
+        'welcome.score': 'Earn points for solving quickly!',
+        'game.time': 'Time',
+        'game.moves': 'Moves',
+        'game.newGame': 'New',
+        'game.reset': 'Reset',
+        'game.check': 'Check',
+        'game.solve': 'Solve',
+        'scores.empty': 'No scores yet. Complete a puzzle!',
+        'msg.good': 'Looks good so far!',
+        'msg.errors': 'error(s) found',
+        'msg.win': 'Congratulations!',
+        'msg.solved': 'Puzzle solved!',
+        'msg.score': 'Score'
+      },
+      es: {
+        'tab.welcome': 'Bienvenido',
+        'tab.game': 'Juego',
+        'tab.scores': 'Top 10',
+        'welcome.title': 'Cómo Jugar',
+        'welcome.desc': 'Llena la cuadrícula 9×9 para que cada fila, columna y caja 3×3 contenga los dígitos 1-9.',
+        'welcome.step1': '<span class="highlight">Clic</span> en celda para seleccionar',
+        'welcome.step2': '<span class="highlight">Teclea 1-9</span> o usa el teclado',
+        'welcome.step3': '<span class="highlight">Flechas</span> para navegar',
+        'welcome.step4': '<span class="highlight">Borrar</span> para limpiar',
+        'welcome.score': '¡Gana puntos resolviendo rápido!',
+        'game.time': 'Tiempo',
+        'game.moves': 'Movs',
+        'game.newGame': 'Nuevo',
+        'game.reset': 'Reiniciar',
+        'game.check': 'Verificar',
+        'game.solve': 'Resolver',
+        'scores.empty': 'Sin puntuaciones. ¡Completa un puzzle!',
+        'msg.good': '¡Vas bien!',
+        'msg.errors': 'error(es) encontrado(s)',
+        'msg.win': '¡Felicitaciones!',
+        'msg.solved': '¡Puzzle resuelto!',
+        'msg.score': 'Puntos'
+      },
+      fr: {
+        'tab.welcome': 'Bienvenue',
+        'tab.game': 'Jeu',
+        'tab.scores': 'Top 10',
+        'welcome.title': 'Comment Jouer',
+        'welcome.desc': 'Remplissez la grille 9×9 pour que chaque rangée, colonne et boîte 3×3 contienne les chiffres 1-9.',
+        'welcome.step1': '<span class="highlight">Cliquez</span> sur une cellule',
+        'welcome.step2': '<span class="highlight">Tapez 1-9</span> ou utilisez le pavé',
+        'welcome.step3': '<span class="highlight">Flèches</span> pour naviguer',
+        'welcome.step4': '<span class="highlight">Effacer</span> pour nettoyer',
+        'welcome.score': 'Gagnez des points en résolvant vite!',
+        'game.time': 'Temps',
+        'game.moves': 'Coups',
+        'game.newGame': 'Nouveau',
+        'game.reset': 'Réinit.',
+        'game.check': 'Vérif.',
+        'game.solve': 'Résoudre',
+        'scores.empty': 'Pas de scores. Complétez un puzzle!',
+        'msg.good': 'Ça avance bien!',
+        'msg.errors': 'erreur(s) trouvée(s)',
+        'msg.win': 'Félicitations!',
+        'msg.solved': 'Puzzle résolu!',
+        'msg.score': 'Points'
+      }
+    };
+
+    let currentLang = 'en';
+
+    function t(key) {
+      return translations[currentLang][key] || key;
+    }
+
+    function updateLang() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        el.innerHTML = t(key);
+      });
+    }
+
+    const grid = document.getElementById('grid');
+    const message = document.getElementById('message');
+    const timerEl = document.getElementById('timer');
+    const movesEl = document.getElementById('moves');
+    const scoresList = document.getElementById('scoresList');
+    const scoresEmpty = document.getElementById('scoresEmpty');
+    const langSelect = document.getElementById('langSelect');
+    
+    let puzzle = [];
+    let solution = [];
+    let userPuzzle = [];
+    let selectedCell = null;
+    let timerInterval = null;
+    let startTime = null;
+    let moves = 0;
+    let gameWon = false;
+    let timerStarted = false;
+
+    function isValid(board, row, col, num) {
+      for (let i = 0; i < 9; i++) {
+        if (board[row][i] === num && i !== col) return false;
+        if (board[i][col] === num && i !== row) return false;
+      }
+      const boxRow = Math.floor(row / 3) * 3;
+      const boxCol = Math.floor(col / 3) * 3;
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if (board[boxRow + i][boxCol + j] === num && (boxRow + i !== row || boxCol + j !== col)) return false;
+        }
+      }
+      return true;
+    }
+
+    function solveSudoku(board) {
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          if (board[row][col] === 0) {
+            const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
+            for (const num of nums) {
+              if (isValid(board, row, col, num)) {
+                board[row][col] = num;
+                if (solveSudoku(board)) return true;
+                board[row][col] = 0;
+              }
+            }
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function generatePuzzle() {
+      const board = Array(9).fill(null).map(() => Array(9).fill(0));
+      solveSudoku(board);
+      solution = board.map(row => [...row]);
+      
+      const puzzleBoard = board.map(row => [...row]);
+      let attempts = 40;
+      while (attempts > 0) {
+        const row = Math.floor(Math.random() * 9);
+        const col = Math.floor(Math.random() * 9);
+        if (puzzleBoard[row][col] !== 0) {
+          puzzleBoard[row][col] = 0;
+          attempts--;
+        }
+      }
+      puzzle = puzzleBoard;
+      userPuzzle = puzzle.map(row => [...row]);
+    }
+
+    function renderGrid() {
+      grid.innerHTML = '';
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          
+          if (puzzle[row][col] !== 0) {
+            cell.textContent = puzzle[row][col];
+            cell.classList.add('fixed');
+          } else if (userPuzzle[row][col] !== 0) {
+            cell.textContent = userPuzzle[row][col];
+            cell.classList.add('user-filled');
+          }
+          
+          cell.addEventListener('click', () => selectCell(row, col));
+          grid.appendChild(cell);
+        }
+      }
+      updateHighlights();
+    }
+
+    function selectCell(row, col) {
+      selectedCell = { row, col };
+      updateHighlights();
+    }
+
+    function updateHighlights() {
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach(cell => {
+        cell.classList.remove('selected', 'related', 'same-number');
+      });
+
+      if (!selectedCell) return;
+
+      const { row, col } = selectedCell;
+      const selectedValue = userPuzzle[row][col];
+
+      cells.forEach(cell => {
+        const r = parseInt(cell.dataset.row);
+        const c = parseInt(cell.dataset.col);
+        
+        if (r === row && c === col) {
+          cell.classList.add('selected');
+        } else if (r === row || c === col || 
+                   (Math.floor(r / 3) === Math.floor(row / 3) && Math.floor(c / 3) === Math.floor(col / 3))) {
+          cell.classList.add('related');
+        }
+
+        if (selectedValue !== 0) {
+          const cellValue = puzzle[r][c] !== 0 ? puzzle[r][c] : userPuzzle[r][c];
+          if (cellValue === selectedValue) {
+            cell.classList.add('same-number');
+          }
+        }
+      });
+    }
+
+    function startTimer() {
+      if (timerStarted) return;
+      timerStarted = true;
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      if (!startTime) return;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function fillCell(num) {
+      if (!selectedCell || gameWon) return;
+      const { row, col } = selectedCell;
+      if (puzzle[row][col] !== 0) return;
+      
+      startTimer();
+      
+      const prevValue = userPuzzle[row][col];
+      userPuzzle[row][col] = num;
+      
+      if (prevValue !== num) {
+        moves++;
+        movesEl.textContent = moves;
+      }
+      
+      renderGrid();
+      message.textContent = '';
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function calculateScore() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const baseScore = 10000;
+      const timePenalty = elapsed * 10;
+      const moveBonus = Math.max(0, 5000 - moves * 50);
+      return Math.max(100, baseScore - timePenalty + moveBonus);
+    }
+
+    function getScores() {
+      try {
+        return JSON.parse(localStorage.getItem('sudokuScores')) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveScore(score) {
+      const scores = getScores();
+      const date = new Date().toLocaleDateString();
+      scores.push({ score, date });
+      scores.sort((a, b) => b.score - a.score);
+      const top10 = scores.slice(0, 10);
+      localStorage.setItem('sudokuScores', JSON.stringify(top10));
+      renderScores();
+    }
+
+    function renderScores() {
+      const scores = getScores();
+      if (scores.length === 0) {
+        scoresEmpty.style.display = 'block';
+        scoresList.innerHTML = '';
+        return;
+      }
+      scoresEmpty.style.display = 'none';
+      scoresList.innerHTML = scores.map((s, i) => `
+        <li>
+          <span>#${i + 1}</span>
+          <span>${s.score.toLocaleString()} ${t('msg.score').toLowerCase()}</span>
+        </li>
+      `).join('');
+    }
+
+    function triggerConfetti() {
+      const confettiContainer = document.getElementById('confetti');
+      confettiContainer.innerHTML = '';
+      const colors = ['#f43f5e', '#8b5cf6', '#22d3ee', '#fbbf24', '#10b981', '#f472b6'];
+      
+      for (let i = 0; i < 80; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = Math.random() * 1.5 + 's';
+        piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+        confettiContainer.appendChild(piece);
+      }
+      
+      setTimeout(() => {
+        confettiContainer.innerHTML = '';
+      }, 4000);
+    }
+
+    function checkWin() {
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          if (userPuzzle[row][col] !== solution[row][col]) return false;
+        }
+      }
+      return true;
+    }
+
+    function handleWin() {
+      gameWon = true;
+      stopTimer();
+      const score = calculateScore();
+      saveScore(score);
+      triggerConfetti();
+      message.textContent = `🎉 ${t('msg.win')} ${t('msg.score')}: ${score.toLocaleString()}`;
+    }
+
+    function checkSolution() {
+      startTimer();
+      let errors = 0;
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach(cell => {
+        cell.classList.remove('error');
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        const value = userPuzzle[row][col];
+        
+        if (value !== 0 && value !== solution[row][col]) {
+          cell.classList.add('error');
+          errors++;
+        }
+      });
+
+      if (errors === 0) {
+        let complete = true;
+        for (let row = 0; row < 9; row++) {
+          for (let col = 0; col < 9; col++) {
+            if (userPuzzle[row][col] === 0) {
+              complete = false;
+              break;
+            }
+          }
+        }
+        if (complete) {
+          handleWin();
+        } else {
+          message.textContent = t('msg.good');
+        }
+      } else {
+        message.textContent = `${errors} ${t('msg.errors')}`;
+      }
+    }
+
+    function solvePuzzle() {
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          userPuzzle[row][col] = solution[row][col];
+        }
+      }
+      renderGrid();
+      message.textContent = t('msg.solved');
+      stopTimer();
+    }
+
+    function resetPuzzle() {
+      userPuzzle = puzzle.map(row => [...row]);
+      moves = 0;
+      movesEl.textContent = '0';
+      timerEl.textContent = '0:00';
+      gameWon = false;
+      timerStarted = false;
+      stopTimer();
+      renderGrid();
+      message.textContent = '';
+    }
+
+    function newGame() {
+      stopTimer();
+      generatePuzzle();
+      renderGrid();
+      selectedCell = null;
+      moves = 0;
+      movesEl.textContent = '0';
+      timerEl.textContent = '0:00';
+      gameWon = false;
+      timerStarted = false;
+      startTime = null;
+      message.textContent = '';
+    }
+
+    document.querySelectorAll('.numpad button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const num = parseInt(btn.dataset.num);
+        fillCell(num);
+      });
+    });
+
+    document.getElementById('newGame').addEventListener('click', newGame);
+    document.getElementById('reset').addEventListener('click', resetPuzzle);
+    document.getElementById('check').addEventListener('click', checkSolution);
+    document.getElementById('solve').addEventListener('click', solvePuzzle);
+
+    langSelect.addEventListener('change', (e) => {
+      currentLang = e.target.value;
+      updateLang();
+      renderScores();
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        
+        if (tab.dataset.tab === 'scores') {
+          renderScores();
+        }
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!selectedCell || gameWon) return;
+      
+      const { row, col } = selectedCell;
+      
+      if (e.key >= '1' && e.key <= '9') {
+        fillCell(parseInt(e.key));
+      } else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') {
+        startTimer();
+        fillCell(0);
+      } else if (e.key === 'ArrowUp' && row > 0) {
+        selectCell(row - 1, col);
+      } else if (e.key === 'ArrowDown' && row < 8) {
+        selectCell(row + 1, col);
+      } else if (e.key === 'ArrowLeft' && col > 0) {
+        selectCell(row, col - 1);
+      } else if (e.key === 'ArrowRight' && col < 8) {
+        selectCell(row, col + 1);
+      }
+    });
+
+    updateLang();
+    newGame();
+  </script>
+</body>
+</html>

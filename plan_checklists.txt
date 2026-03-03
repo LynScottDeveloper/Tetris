@@ -1,0 +1,3 @@
+[x] Create HTML5 canvas Tetris game with reusable engine, scenes, theming, and localStorage scoring
+
+Open Issues:
