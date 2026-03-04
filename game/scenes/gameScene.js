@@ -69,12 +69,132 @@ export class GameScene extends Scene {
   constructor(options) {
     super("game", options);
     this.SHAPES = makeShapes();
-    this.age = 0;
     this.showGhost = true;
     this.nextShapeIndex = null;
     this.nextColor = null;
     this.musicStarted = false;
+    this.buttons = null;
+    this._lastRenderInfo = null;
     this.reset();
+  }
+
+  createButtons(card) {
+    const btnSize = 44;
+    const gap = 6;
+    const startX = 16; // Card-relative coordinate
+    const bottomY = card.height - btnSize * 2 - gap - 24; // Card-relative coordinate
+
+    return {
+      rotate: {
+        x: startX,
+        y: bottomY,
+        w: btnSize * 2 + gap,
+        h: btnSize,
+        action: "rotate",
+      },
+      left: {
+        x: startX,
+        y: bottomY + btnSize + gap,
+        w: btnSize,
+        h: btnSize,
+        action: "moveLeft",
+      },
+      down: {
+        x: startX + btnSize + gap,
+        y: bottomY + btnSize + gap,
+        w: btnSize,
+        h: btnSize,
+        action: "softDrop",
+      },
+      right: {
+        x: startX + btnSize * 2 + gap * 2,
+        y: bottomY + btnSize + gap,
+        w: btnSize,
+        h: btnSize,
+        action: "moveRight",
+      },
+      hardDrop: {
+        x: card.width - btnSize - 16,
+        y: bottomY,
+        w: btnSize,
+        h: btnSize * 2 + gap,
+        action: "hardDrop",
+      },
+    };
+  }
+
+  renderButtons(ctx) {
+    if (
+      this.manager.currentName !== "game" &&
+      this.manager.currentName !== "pause"
+    ) {
+      return;
+    }
+
+    const theme = window.currentTheme || DarkTheme;
+    const renderInfo = this._lastRenderInfo;
+    if (!renderInfo) return;
+    const { card } = renderInfo;
+    this.buttons = this.createButtons(card);
+
+    const btnTheme = {
+      bg: "rgba(255,255,255,0.15)",
+      border: "rgba(255,255,255,0.3)",
+      text: "#fff",
+    };
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const drawBtn = (btn, label, color) => {
+      const screenX = card.x + btn.x; // Convert card-relative to screen coordinates
+      const screenY = card.y + btn.y; // Convert card-relative to screen coordinates
+
+      ctx.fillStyle = color || btnTheme.bg;
+      ctx.strokeStyle = btnTheme.border;
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.roundRect(screenX, screenY, btn.w, btn.h, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = btnTheme.text;
+      ctx.font = "bold 20px system-ui";
+      ctx.fillText(label, screenX + btn.w / 2, screenY + btn.h / 2);
+    };
+
+    drawBtn(this.buttons.rotate, "↻", "rgba(99,102,241,0.5)");
+    drawBtn(this.buttons.left, "←");
+    drawBtn(this.buttons.down, "↓", "rgba(34,197,94,0.5)");
+    drawBtn(this.buttons.right, "→");
+    drawBtn(this.buttons.hardDrop, "⬇⬇", "rgba(239,68,68,0.5)");
+  }
+
+  handleMouseClick(pos) {
+    if (
+      this.manager.currentName !== "game" &&
+      this.manager.currentName !== "pause"
+    ) {
+      return;
+    }
+
+    if (!this.buttons) return;
+
+    for (const key in this.buttons) {
+      const btn = this.buttons[key];
+      if (
+        pos.x >= btn.x &&
+        pos.x <= btn.x + btn.w &&
+        pos.y >= btn.y &&
+        pos.y <= btn.y + btn.h
+      ) {
+        if (this[btn.action]) {
+          this[btn.action]();
+        }
+        return;
+      }
+    }
   }
 
   enter(data) {
@@ -273,6 +393,14 @@ export class GameScene extends Scene {
     }
   }
 
+  moveLeft() {
+    this.move(-1);
+  }
+
+  moveRight() {
+    this.move(1);
+  }
+
   rotate() {
     const trial = this.cloneCurrent();
     trial.r = (trial.r + 1) % this.SHAPES[trial.shapeIndex].length;
@@ -293,26 +421,30 @@ export class GameScene extends Scene {
   }
 
   update(dt) {
+    super.update(dt);
     this.dropTimer += dt;
-    this.age += dt;
     if (this.dropTimer >= this.dropInterval) {
       this.dropTimer = 0;
       this.softDrop();
     }
   }
 
-  render(ctx) {
+  render(ctx, renderInfo) {
     const theme = window.currentTheme || DarkTheme;
-    const w = ctx.canvas.width;
-    const h = ctx.canvas.height;
+    const { card } = renderInfo;
+    this._lastRenderInfo = renderInfo;
 
-    ctx.fillStyle = theme.background;
-    ctx.fillRect(0, 0, w, h);
+    this.renderBackground(ctx, renderInfo, theme);
+
+    const w = card.width;
+    const h = card.height;
+    const x = card.x;
+    const y = card.y;
 
     const boardWidth = COLS * CELL;
     const boardHeight = ROWS * CELL;
-    const offsetX = Math.floor((w - boardWidth - 120) / 2);
-    const offsetY = Math.floor((h - boardHeight) / 2);
+    const offsetX = x + Math.floor((w - boardWidth - 120) / 2);
+    const offsetY = y + Math.floor((h - boardHeight) / 2);
 
     ctx.fillStyle = theme.boardBackground;
     ctx.fillRect(offsetX - 8, offsetY - 8, boardWidth + 16, boardHeight + 16);
@@ -321,7 +453,7 @@ export class GameScene extends Scene {
     ctx.fillStyle = theme.textPrimary;
     ctx.font =
       '26px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("tetris"), w / 2, offsetY - 24);
+    ctx.fillText(i18n.t("tetris"), x + w / 2, offsetY - 24);
 
     for (let y = 0; y < ROWS; y++) {
       for (let x = 0; x < COLS; x++) {
@@ -443,8 +575,10 @@ export class GameScene extends Scene {
     const fade = 1 - this.age / 0.25;
     if (fade > 0) {
       ctx.fillStyle = `rgba(0,0,0,${fade.toFixed(2)})`;
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(x, y, w, h);
     }
+
+    this.renderButtons(ctx);
   }
 
   handleInput(event, isDown) {

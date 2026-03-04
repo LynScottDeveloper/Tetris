@@ -6,7 +6,6 @@ export class PauseScene extends Scene {
   constructor(options) {
     super("pause", options);
     this.snapshot = null;
-    this.age = 0;
   }
 
   enter(data) {
@@ -24,38 +23,44 @@ export class PauseScene extends Scene {
   }
 
   update(dt) {
-    this.age += dt;
+    super.update(dt);
   }
 
-  render(ctx) {
+  render(ctx, renderInfo) {
     const theme = window.currentTheme || DarkTheme;
-    const w = ctx.canvas.width;
-    const h = ctx.canvas.height;
+    const { card } = renderInfo;
+
+    this.renderBackground(ctx, renderInfo, theme);
+
+    const w = card.width;
+    const h = card.height;
+    const x = card.x;
+    const y = card.y;
 
     ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(x, y, w, h);
 
     ctx.fillStyle = theme.textPrimary;
     ctx.textAlign = "center";
     ctx.font =
       '32px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("paused"), w / 2, h * 0.4);
+    ctx.fillText(i18n.t("paused"), x + w / 2, y + h * 0.4);
 
     ctx.fillStyle = theme.textMuted;
     ctx.font =
       '18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("resume"), w / 2, h * 0.5);
+    ctx.fillText(i18n.t("resume"), x + w / 2, y + h * 0.5);
 
     ctx.font =
       '13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("controls1"), w / 2, h * 0.6);
-    ctx.fillText(i18n.t("controls2"), w / 2, h * 0.67);
-    ctx.fillText(i18n.t("controls3"), w / 2, h * 0.74);
+    ctx.fillText(i18n.t("controls1"), x + w / 2, y + h * 0.6);
+    ctx.fillText(i18n.t("controls2"), x + w / 2, y + h * 0.67);
+    ctx.fillText(i18n.t("controls3"), x + w / 2, y + h * 0.74);
 
     const fade = 1 - this.age / 0.2;
     if (fade > 0) {
       ctx.fillStyle = `rgba(0,0,0,${fade.toFixed(2)})`;
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(x, y, w, h);
     }
   }
 

@@ -12,6 +12,7 @@ import { MenuScene } from "./scenes/menu.js";
 import { GameScene } from "./scenes/gameScene.js";
 import { PauseScene } from "./scenes/pauseScene.js";
 import { GameOverScene } from "./scenes/gameOverScene.js";
+import { TetrominoBackgroundEffect } from "./effects/tetrominoBackground.js";
 import { DarkTheme } from "./themes/dark.js";
 import { LightTheme } from "./themes/light.js";
 import {
@@ -35,17 +36,38 @@ window.soundManager.register(
 
 const sceneManager = new SceneManager();
 
-const welcomeScene = new WelcomeScene({ engine: null, manager: sceneManager });
+// Create the Tetromino background effect (shared by all scenes)
+const backgroundEffect = new TetrominoBackgroundEffect();
+
+const welcomeScene = new WelcomeScene({
+  engine: null,
+  manager: sceneManager,
+  backgroundEffect,
+});
 const languageSelectorScene = new LanguageSelectorScene({
   engine: null,
   manager: sceneManager,
+  backgroundEffect,
 });
-const menuScene = new MenuScene({ engine: null, manager: sceneManager });
-const gameScene = new GameScene({ engine: null, manager: sceneManager });
-const pauseScene = new PauseScene({ engine: null, manager: sceneManager });
+const menuScene = new MenuScene({
+  engine: null,
+  manager: sceneManager,
+  backgroundEffect,
+});
+const gameScene = new GameScene({
+  engine: null,
+  manager: sceneManager,
+  backgroundEffect,
+});
+const pauseScene = new PauseScene({
+  engine: null,
+  manager: sceneManager,
+  backgroundEffect,
+});
 const gameOverScene = new GameOverScene({
   engine: null,
   manager: sceneManager,
+  backgroundEffect,
 });
 
 sceneManager.register("welcome", welcomeScene);
@@ -69,25 +91,11 @@ gameScene.engine = engine;
 pauseScene.engine = engine;
 gameOverScene.engine = engine;
 
-// Load saved theme from localStorage and apply styling
+// Load saved theme from localStorage
 const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
 if (storedTheme === "light") {
   window.currentTheme = LightTheme;
 }
-
-function applyThemeToScreen() {
-  const theme = window.currentTheme;
-  document.documentElement.style.background = theme.screenBackground;
-  document.body.style.background = theme.screenBackground;
-  const gameShell = document.querySelector(".game-shell");
-  if (gameShell) {
-    gameShell.style.background = theme.background;
-    gameShell.style.border = "2px solid " + theme.borderColor;
-    gameShell.style.boxShadow = "0 24px 60px rgba(0, 0, 0, 0.15)";
-  }
-}
-
-applyThemeToScreen();
 
 // Theme toggle handler (T key)
 window.addEventListener("keydown", (e) => {
@@ -99,7 +107,6 @@ window.addEventListener("keydown", (e) => {
       window.currentTheme = DarkTheme;
       localStorage.setItem(STORAGE_KEYS.THEME, "dark");
     }
-    applyThemeToScreen();
   }
 });
 

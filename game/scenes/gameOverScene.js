@@ -1,4 +1,7 @@
 import { Scene } from "../../engine/scene.js";
+import { Button } from "../../engine/ui/Button.js";
+import { Text } from "../../engine/ui/Text.js";
+import { TextStyles } from "../../engine/ui/TextStyles.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
 import { ConfettiSystem } from "../effects/confetti.js";
@@ -9,9 +12,7 @@ export class GameOverScene extends Scene {
     super("gameover", options);
     this.data = null;
     this.confetti = new ConfettiSystem();
-    this.age = 0;
-    this.playAgainButtonArea = null;
-    this.menuButtonArea = null;
+    this.components = [];
   }
 
   enter(data) {
@@ -23,137 +24,211 @@ export class GameOverScene extends Scene {
       topTenRank: 0,
     };
     this.age = 0;
-    // Show confetti if score is in top 10
     if (this.data.topTenRank > 0) {
       this.confetti.start();
     }
     if (window.soundManager?.stop) {
       window.soundManager.stop("gameMusic");
     }
+
+    this.initializeComponents();
   }
 
-  update(dt) {
-    this.age += dt;
-    this.confetti.update(dt);
-  }
-
-  render(ctx) {
+  initializeComponents() {
+    this.components = [];
     const theme = window.currentTheme || DarkTheme;
-    const w = ctx.canvas.width;
-    const h = ctx.canvas.height;
-
-    ctx.fillStyle = theme.background;
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.fillStyle = theme.textPrimary;
-    ctx.textAlign = "center";
-    ctx.font =
-      '36px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("gameOver"), w / 2, h * 0.12);
-
-    ctx.fillStyle = theme.textMuted;
-    ctx.font =
-      '16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("score") + ": " + this.data.score, w / 2, h * 0.18);
-    ctx.fillText(i18n.t("lines") + ": " + this.data.lines, w / 2, h * 0.22);
-    ctx.fillText(i18n.t("level") + ": " + this.data.level, w / 2, h * 0.26);
-
+    const card = this.card || { width: 480, height: 800, x: 0, y: 0 };
+    const w = card.width;
+    const h = card.height;
     const best = parseInt(
       localStorage.getItem(STORAGE_KEYS.BEST_SCORE) || "0",
       10,
     );
-    ctx.fillText(i18n.t("bestScore") + ": " + best, w / 2, h * 0.3);
+    const topScores = getTopScores();
 
-    // Display rank if in top 10
+    // Title: Game Over
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.08,
+        width: w,
+        text: i18n.t("gameOver"),
+        style: { ...TextStyles.title, color: theme.textPrimary },
+        align: "center",
+      }),
+    );
+
+    // Score info
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.16,
+        width: w,
+        text: `${i18n.t("score")}: ${this.data.score}`,
+        style: { ...TextStyles.body, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.2,
+        width: w,
+        text: `${i18n.t("lines")}: ${this.data.lines}`,
+        style: { ...TextStyles.body, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.24,
+        width: w,
+        text: `${i18n.t("level")}: ${this.data.level}`,
+        style: { ...TextStyles.body, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.28,
+        width: w,
+        text: `${i18n.t("bestScore")}: ${best}`,
+        style: { ...TextStyles.body, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    // Top 10 Rank
     if (this.data.topTenRank > 0) {
-      ctx.fillStyle = theme.accent;
-      ctx.font =
-        'bold 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-      ctx.fillText("🏆 Top 10 Rank #" + this.data.topTenRank, w / 2, h * 0.35);
+      this.components.push(
+        new Text({
+          x: 0,
+          y: h * 0.33,
+          width: w,
+          text: `Top 10 Rank #${this.data.topTenRank}`,
+          style: { ...TextStyles.heading, color: theme.accent },
+          align: "center",
+        }),
+      );
     }
 
-    // Display top 10 scores
-    const topScores = getTopScores();
+    // Top 10 Scores heading
     if (topScores.length > 0) {
-      ctx.fillStyle = theme.textPrimary;
-      ctx.textAlign = "center";
-      ctx.font =
-        'bold 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-      ctx.fillText("Top 10 Scores", w / 2, h * 0.38);
+      this.components.push(
+        new Text({
+          x: 0,
+          y: h * 0.35,
+          width: w,
+          text: "Top 10 Scores",
+          style: { ...TextStyles.heading, color: theme.textPrimary },
+          align: "center",
+        }),
+      );
 
-      ctx.fillStyle = theme.textMuted;
-      ctx.textAlign = "left";
-      ctx.font =
-        '12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-      const startY = h * 0.42;
-      const lineHeight = 18;
+      // Individual scores
+      const startY = h * 0.4;
+      const lineHeight = 0.035;
       const leftX = w * 0.15;
 
       for (let i = 0; i < topScores.length && i < 10; i++) {
         const rank = i + 1;
         const score = topScores[i];
-        const yPos = startY + i * lineHeight;
-        ctx.fillText("Player " + rank, leftX, yPos);
-        ctx.textAlign = "right";
-        ctx.fillText(score, w * 0.85, yPos);
-        ctx.textAlign = "left";
+        const yPos = startY + i * h * lineHeight;
+
+        this.components.push(
+          new Text({
+            x: leftX,
+            y: yPos,
+            width: w * 0.3,
+            text: `Player ${rank}`,
+            style: { ...TextStyles.small, color: theme.textMuted },
+            align: "left",
+          }),
+        );
+
+        this.components.push(
+          new Text({
+            x: w * 0.55,
+            y: yPos,
+            width: w * 0.3,
+            text: `${score}`,
+            style: { ...TextStyles.small, color: theme.textMuted },
+            align: "right",
+          }),
+        );
       }
     }
 
-    // Draw Play Again button
-    const playAgainY = h * 0.78;
+    // Play Again Button
+    const playAgainWidth = 280;
     const playAgainHeight = 50;
-    const playAgainWidth = 220;
-    const playAgainX = w / 2 - playAgainWidth / 2;
+    const playAgainX = (w - playAgainWidth) / 2;
+    const playAgainY = h * 0.75;
 
-    this.playAgainButtonArea = {
-      x: playAgainX,
-      y: playAgainY,
-      width: playAgainWidth,
-      height: playAgainHeight,
-    };
-
-    this.drawButton(
-      ctx,
-      playAgainX,
-      playAgainY,
-      playAgainWidth,
-      playAgainHeight,
-      theme.accent,
-      theme.textPrimary,
-      2,
-      i18n.t("playAgain"),
-      theme.textPrimary,
-      'bold 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    this.components.push(
+      new Button({
+        x: playAgainX,
+        y: playAgainY,
+        width: playAgainWidth,
+        height: playAgainHeight,
+        text: i18n.t("playAgain"),
+        variant: "primary",
+        card,
+        onClick: () => {
+          const gameScene = this.manager.scenes["game"];
+          if (gameScene?.reset) {
+            gameScene.reset();
+          }
+          this.manager.change("game");
+        },
+      }),
     );
 
-    // Draw Menu button
-    const menuY = h * 0.91;
+    // Menu Button
+    const menuWidth = 280;
     const menuHeight = 50;
-    const menuWidth = 220;
-    const menuX = w / 2 - menuWidth / 2;
+    const menuX = (w - menuWidth) / 2;
+    const menuY = h * 0.88;
 
-    this.menuButtonArea = {
-      x: menuX,
-      y: menuY,
-      width: menuWidth,
-      height: menuHeight,
-    };
-
-    this.drawButton(
-      ctx,
-      menuX,
-      menuY,
-      menuWidth,
-      menuHeight,
-      theme.accent,
-      theme.textPrimary,
-      2,
-      i18n.t("menu"),
-      theme.textPrimary,
-      'bold 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    this.components.push(
+      new Button({
+        x: menuX,
+        y: menuY,
+        width: menuWidth,
+        height: menuHeight,
+        text: i18n.t("menu"),
+        variant: "secondary",
+        card,
+        onClick: () => {
+          this.manager.change("menu");
+        },
+      }),
     );
+  }
 
+  update(dt) {
+    super.update(dt);
+    this.confetti.update(dt);
+  }
+
+  render(ctx, renderInfo) {
+    const theme = window.currentTheme || DarkTheme;
+    const { card } = renderInfo;
+
+    this.renderBackground(ctx, renderInfo, theme);
+
+    // Render all UI components (text labels and buttons)
+    for (const component of this.components) {
+      component.card = card;
+      component.render(ctx);
+    }
+
+    // Render confetti on top
     this.confetti.render(ctx);
   }
 
@@ -176,33 +251,10 @@ export class GameOverScene extends Scene {
   }
 
   handleMouseClick(pos) {
-    if (this.playAgainButtonArea) {
-      const { x, y, width, height } = this.playAgainButtonArea;
-      if (
-        pos.x >= x &&
-        pos.x <= x + width &&
-        pos.y >= y &&
-        pos.y <= y + height
-      ) {
-        const gameScene = this.manager.scenes["game"];
-        if (gameScene?.reset) {
-          gameScene.reset();
-        }
-        this.manager.change("game");
-        return;
-      }
-    }
-
-    if (this.menuButtonArea) {
-      const { x, y, width, height } = this.menuButtonArea;
-      if (
-        pos.x >= x &&
-        pos.x <= x + width &&
-        pos.y >= y &&
-        pos.y <= y + height
-      ) {
-        this.manager.change("menu");
-        return;
+    // Delegate to button components for click handling
+    for (const component of this.components) {
+      if (component instanceof Button) {
+        component.handleClick(pos.x, pos.y);
       }
     }
   }

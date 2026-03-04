@@ -30,9 +30,9 @@ export class SceneManager {
     }
   }
 
-  render(ctx) {
+  render(ctx, renderInfo) {
     if (this.current?.render) {
-      this.current.render(ctx);
+      this.current.render(ctx, renderInfo);
     }
   }
 
@@ -44,7 +44,7 @@ export class SceneManager {
 
   handleMouseClick(pos, ctx) {
     if (this.current?.handleMouseClick) {
-      this.current.handleMouseClick(pos, ctx);
+      this.current.handleMouseClick(pos);
     }
   }
 }

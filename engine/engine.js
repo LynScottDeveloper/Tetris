@@ -15,6 +15,12 @@ export class Engine {
     this.accumulator = 0;
     this.step = 1000 / 60;
     this.running = false;
+    this.card = {
+      x: 0,
+      y: 0,
+      width: this.targetWidth,
+      height: this.targetHeight,
+    };
 
     this._resizeCanvas();
     window.addEventListener("resize", () => this._resizeCanvas());
@@ -40,34 +46,79 @@ export class Engine {
       }
     });
 
-    // Add mouse click support
-    this.canvas.addEventListener("click", (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const scaleX = this.targetWidth / rect.width;
-      const scaleY = this.targetHeight / rect.height;
-      const x = (e.clientX - rect.left) * scaleX;
-      const y = (e.clientY - rect.top) * scaleY;
+    // Add mouse click and touch support
+    const processClick = (clientX, clientY) => {
+      const card = this.card;
+      if (!card) return;
 
-      if (this.sceneManager?.handleMouseClick) {
-        this.sceneManager.handleMouseClick({ x, y }, this.ctx);
+      // Convert to card-relative coordinates
+      const pos = { x: clientX - card.x, y: clientY - card.y };
+      console.log(
+        "Engine click:",
+        pos,
+        "screen:",
+        { x: clientX, y: clientY },
+        "card:",
+        card,
+      );
+
+      if (this.sceneManager) {
+        this.sceneManager.handleMouseClick(pos, this.ctx);
       }
+    };
+
+    // Mouse click handler
+    window.addEventListener("click", (e) => {
+      processClick(e.clientX, e.clientY);
     });
+
+    // Touch support for mobile
+    window.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.touches.length > 0) {
+          const touch = e.touches[0];
+          processClick(touch.clientX, touch.clientY);
+        }
+      },
+      false,
+    );
   }
 
-  // Resizes and scales the canvas to fit the window while maintaining aspect ratio
+  // Resizes the canvas to full screen and calculates card dimensions
   _resizeCanvas() {
-    const shell = this.canvas.parentElement;
-    const rect = shell.getBoundingClientRect();
-    this.canvas.width = this.targetWidth;
-    this.canvas.height = this.targetHeight;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    this.canvas.width = w;
+    this.canvas.height = h;
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const scaleW = rect.width / this.targetWidth;
-    const scaleH = rect.height / this.targetHeight;
-    let scale = Math.min(scaleW, scaleH);
-    if (!isFinite(scale) || scale <= 0) {
-      scale = 1;
+
+    // Calculate card dimensions (max 480x800, centered)
+    const maxCardW = 480;
+    const maxCardH = 800;
+    const targetAspect = maxCardW / maxCardH;
+    const windowAspect = w / h;
+
+    let cardW, cardH;
+    if (windowAspect > targetAspect) {
+      cardH = Math.min(h, maxCardH);
+      cardW = cardH * targetAspect;
+    } else {
+      cardW = Math.min(w, maxCardW);
+      cardH = cardW / targetAspect;
     }
-    this.ctx.scale(scale, scale);
+
+    this.card = {
+      x: (w - cardW) / 2,
+      y: (h - cardH) / 2,
+      width: cardW,
+      height: cardH,
+      maxWidth: maxCardW,
+      maxHeight: maxCardH,
+    };
+
+    this.canvasOffset = { x: 0, y: 0 };
   }
 
   // Starts the 60 FPS game loop
@@ -99,8 +150,12 @@ export class Engine {
     }
 
     if (this.sceneManager?.render) {
-      this.ctx.clearRect(0, 0, this.targetWidth, this.targetHeight);
-      this.sceneManager.render(this.ctx);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.sceneManager.render(this.ctx, {
+        screenWidth: this.canvas.width,
+        screenHeight: this.canvas.height,
+        card: this.card,
+      });
     }
 
     requestAnimationFrame((t) => this._loop(t));

@@ -1,6 +1,7 @@
 import { Scene } from "../../engine/scene.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
+import { Button, Text, TextStyles } from "../../engine/ui/index.js";
 
 export class LanguageSelectorScene extends Scene {
   constructor(options) {
@@ -20,8 +21,8 @@ export class LanguageSelectorScene extends Scene {
       }
     }
 
-    this.age = 0;
-    this.languageClickAreas = [];
+    this.buttons = [];
+    this.texts = [];
   }
 
   enter() {
@@ -29,74 +30,87 @@ export class LanguageSelectorScene extends Scene {
   }
 
   update(dt) {
-    this.age += dt;
+    super.update(dt);
   }
 
-  render(ctx) {
+  render(ctx, renderInfo) {
     const theme = window.currentTheme || DarkTheme;
-    const w = ctx.canvas.width;
-    const h = ctx.canvas.height;
+    const { card } = renderInfo;
 
-    ctx.fillStyle = theme.background;
-    ctx.fillRect(0, 0, w, h);
+    this.renderBackground(ctx, renderInfo, theme);
 
-    ctx.fillStyle = theme.textPrimary;
-    ctx.font =
-      '36px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.textAlign = "center";
-    ctx.fillText(i18n.t("selectLanguage"), w / 2, h * 0.25);
+    const w = card.width;
+    const h = card.height;
+    const x = card.x;
+    const y = card.y;
 
+    // Title
+    this.texts = [
+      new Text({
+        x: x,
+        y: y + h * 0.25 - 25,
+        width: w,
+        height: 50,
+        text: i18n.t("selectLanguage"),
+        style: TextStyles.subtitle,
+      }),
+      new Text({
+        x: x,
+        y: y + h * 0.85 - 10,
+        width: w,
+        height: 20,
+        text: "↑ ↓ to select  ·  SPACE to confirm",
+        style: TextStyles.small,
+      }),
+    ];
+
+    // Language buttons
+    this.buttons = [];
     const startY = h * 0.45;
     const spacing = 70;
-    const buttonHeight = 45;
     const buttonWidth = 150;
-    this.languageClickAreas = [];
+    const buttonHeight = 45;
 
     for (let i = 0; i < this.languages.length; i++) {
       const buttonY = startY + i * spacing;
       const buttonX = w / 2 - buttonWidth / 2;
+      const isSelected = i === this.selectedIndex;
 
-      // Store click area for this language option
-      this.languageClickAreas.push({
-        index: i,
-        x: buttonX,
-        y: buttonY,
-        width: buttonWidth,
-        height: buttonHeight,
-      });
-
-      // Draw button
-      const bgColor =
-        i === this.selectedIndex ? theme.accent : theme.accentSoft;
-      const borderWidth = i === this.selectedIndex ? 3 : 1;
-      const fontStyle =
-        (i === this.selectedIndex ? "bold " : "") +
-        '20px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-
-      this.drawButton(
-        ctx,
-        buttonX,
-        buttonY,
-        buttonWidth,
-        buttonHeight,
-        bgColor,
-        theme.textPrimary,
-        borderWidth,
-        this.languages[i].name,
-        theme.textPrimary,
-        fontStyle,
+      this.buttons.push(
+        new Button({
+          x: buttonX,
+          y: buttonY,
+          width: buttonWidth,
+          height: buttonHeight,
+          text: this.languages[i].name,
+          bgColor: isSelected ? theme.accent : theme.accentSoft,
+          borderColor: theme.textPrimary,
+          borderWidth: isSelected ? 3 : 1,
+          textColor: theme.textPrimary,
+          fontSize: 20,
+          fontWeight: isSelected ? "bold" : "normal",
+          onClick: () => {
+            this.selectedIndex = i;
+            i18n.setLanguage(this.languages[i].code);
+            this.manager.change("menu");
+          },
+        }),
       );
     }
 
-    ctx.fillStyle = theme.textMuted;
-    ctx.font =
-      '14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText("↑ ↓ to select  ·  SPACE to confirm", w / 2, h * 0.85);
+    // Render texts
+    this.texts.forEach((t) => t.render(ctx));
+
+    // Render buttons with card position offset
+    this.buttons.forEach((b) => {
+      b.card = { x, y }; // Pass card position for rendering
+      b.render(ctx);
+    });
 
     const fade = 1 - this.age / 0.3;
     if (fade > 0) {
       ctx.fillStyle = `rgba(0,0,0,${fade.toFixed(2)})`;
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillRect(x, y, w, h);
     }
   }
 
@@ -121,17 +135,9 @@ export class LanguageSelectorScene extends Scene {
   }
 
   handleMouseClick(pos) {
-    for (const area of this.languageClickAreas) {
-      if (
-        pos.x >= area.x &&
-        pos.x <= area.x + area.width &&
-        pos.y >= area.y &&
-        pos.y <= area.y + area.height
-      ) {
-        this.selectedIndex = area.index;
-        i18n.setLanguage(this.languages[this.selectedIndex].code);
-        this.manager.change("menu");
-        break;
+    for (const btn of this.buttons) {
+      if (btn.handleClick(pos.x, pos.y)) {
+        return;
       }
     }
   }
