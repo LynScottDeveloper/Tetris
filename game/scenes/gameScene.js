@@ -3,6 +3,8 @@
  * Handles piece movement, rotation, collision detection, and line clearing.
  */
 import { Scene } from "../../engine/scene.js";
+import { Text } from "../../engine/ui/Text.js";
+import { TextStyles } from "../../engine/ui/TextStyles.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
 import { LShape } from "../sprites/LShape.js";
@@ -75,6 +77,7 @@ export class GameScene extends Scene {
     this.musicStarted = false;
     this.buttons = null;
     this._lastRenderInfo = null;
+    this.components = [];
     this.reset();
   }
 
@@ -429,6 +432,92 @@ export class GameScene extends Scene {
     }
   }
 
+  initializeUIComponents(theme, card, offsetX, offsetY, panelX) {
+    this.components = [];
+    const panelY = offsetY;
+
+    // Score label and value
+    this.components.push(
+      new Text({
+        x: panelX - card.x,
+        y: panelY - card.y + 4,
+        width: 80,
+        text: i18n.t("score"),
+        style: { ...TextStyles.label, color: theme.textPrimary },
+        align: "left",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: panelX - card.x,
+        y: panelY - card.y + 28,
+        width: 80,
+        text: String(this.score),
+        style: { ...TextStyles.score, color: theme.accent },
+        align: "left",
+      }),
+    );
+
+    // Lines label and value
+    this.components.push(
+      new Text({
+        x: panelX - card.x,
+        y: panelY - card.y + 60,
+        width: 80,
+        text: i18n.t("lines"),
+        style: { ...TextStyles.label, color: theme.textPrimary },
+        align: "left",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: panelX - card.x,
+        y: panelY - card.y + 82,
+        width: 80,
+        text: String(this.lines),
+        style: { ...TextStyles.buttonSmall, color: theme.textPrimary },
+        align: "left",
+      }),
+    );
+
+    // Level label and value
+    this.components.push(
+      new Text({
+        x: panelX - card.x,
+        y: panelY - card.y + 112,
+        width: 80,
+        text: i18n.t("level"),
+        style: { ...TextStyles.label, color: theme.textPrimary },
+        align: "left",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: panelX - card.x,
+        y: panelY - card.y + 134,
+        width: 80,
+        text: String(this.level),
+        style: { ...TextStyles.buttonSmall, color: theme.textPrimary },
+        align: "left",
+      }),
+    );
+
+    // Next piece label
+    this.components.push(
+      new Text({
+        x: panelX - card.x,
+        y: panelY - card.y + 156,
+        width: 80,
+        text: i18n.t("next"),
+        style: { ...TextStyles.label, color: theme.textPrimary },
+        align: "left",
+      }),
+    );
+  }
+
   render(ctx, renderInfo) {
     const theme = window.currentTheme || DarkTheme;
     const { card } = renderInfo;
@@ -515,31 +604,14 @@ export class GameScene extends Scene {
 
     const panelX = offsetX + boardWidth + 24;
 
-    ctx.textAlign = "left";
-    ctx.fillStyle = theme.textPrimary;
-    ctx.font =
-      '16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("score"), panelX, offsetY + 4);
-    ctx.font =
-      '22px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillStyle = theme.accent;
-    ctx.fillText(String(this.score), panelX, offsetY + 28);
+    // Initialize UI components for the info panel
+    this.initializeUIComponents(theme, card, offsetX, offsetY, panelX);
 
-    ctx.fillStyle = theme.textPrimary;
-    ctx.font =
-      '16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("lines"), panelX, offsetY + 60);
-    ctx.font =
-      '20px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(String(this.lines), panelX, offsetY + 82);
-
-    ctx.fillStyle = theme.textPrimary;
-    ctx.font =
-      '16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("level"), panelX, offsetY + 112);
-    ctx.font =
-      '20px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(String(this.level), panelX, offsetY + 134);
+    // Render text components
+    for (const component of this.components) {
+      component.card = card;
+      component.render(ctx);
+    }
 
     // Next piece preview
     if (this.nextShapeIndex != null) {
@@ -549,11 +621,6 @@ export class GameScene extends Scene {
       const cols = previewShape[0].length;
       const previewX = panelX;
       const previewY = offsetY + 170;
-
-      ctx.fillStyle = theme.textPrimary;
-      ctx.font =
-        '16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-      ctx.fillText(i18n.t("next"), panelX, offsetY + 156);
 
       for (let py = 0; py < rows; py++) {
         for (let px = 0; px < cols; px++) {

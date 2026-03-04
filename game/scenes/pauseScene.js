@@ -1,4 +1,6 @@
 import { Scene } from "../../engine/scene.js";
+import { Text } from "../../engine/ui/Text.js";
+import { TextStyles } from "../../engine/ui/TextStyles.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
 
@@ -6,6 +8,7 @@ export class PauseScene extends Scene {
   constructor(options) {
     super("pause", options);
     this.snapshot = null;
+    this.components = [];
   }
 
   enter(data) {
@@ -14,6 +17,73 @@ export class PauseScene extends Scene {
     if (window.soundManager?.pause) {
       window.soundManager.pause("gameMusic");
     }
+    this.initializeComponents();
+  }
+
+  initializeComponents() {
+    this.components = [];
+    const theme = window.currentTheme || DarkTheme;
+    const card = this.card || { width: 480, height: 800, x: 0, y: 0 };
+    const w = card.width;
+    const h = card.height;
+
+    // "Paused" title
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.35,
+        width: w,
+        text: i18n.t("paused"),
+        style: { ...TextStyles.subtitle, color: theme.textPrimary },
+        align: "center",
+      }),
+    );
+
+    // "Resume" instruction
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.45,
+        width: w,
+        text: i18n.t("resume"),
+        style: { ...TextStyles.body, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    // Control instructions
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.55,
+        width: w,
+        text: i18n.t("controls1"),
+        style: { ...TextStyles.small, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.62,
+        width: w,
+        text: i18n.t("controls2"),
+        style: { ...TextStyles.small, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.69,
+        width: w,
+        text: i18n.t("controls3"),
+        style: { ...TextStyles.small, color: theme.textMuted },
+        align: "center",
+      }),
+    );
   }
 
   exit() {
@@ -32,35 +102,21 @@ export class PauseScene extends Scene {
 
     this.renderBackground(ctx, renderInfo, theme);
 
-    const w = card.width;
-    const h = card.height;
-    const x = card.x;
-    const y = card.y;
-
+    // Dim overlay
     ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(x, y, w, h);
+    ctx.fillRect(card.x, card.y, card.width, card.height);
 
-    ctx.fillStyle = theme.textPrimary;
-    ctx.textAlign = "center";
-    ctx.font =
-      '32px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("paused"), x + w / 2, y + h * 0.4);
+    // Render text components
+    for (const component of this.components) {
+      component.card = card;
+      component.render(ctx);
+    }
 
-    ctx.fillStyle = theme.textMuted;
-    ctx.font =
-      '18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("resume"), x + w / 2, y + h * 0.5);
-
-    ctx.font =
-      '13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("controls1"), x + w / 2, y + h * 0.6);
-    ctx.fillText(i18n.t("controls2"), x + w / 2, y + h * 0.67);
-    ctx.fillText(i18n.t("controls3"), x + w / 2, y + h * 0.74);
-
+    // Fade overlay
     const fade = 1 - this.age / 0.2;
     if (fade > 0) {
       ctx.fillStyle = `rgba(0,0,0,${fade.toFixed(2)})`;
-      ctx.fillRect(x, y, w, h);
+      ctx.fillRect(card.x, card.y, card.width, card.height);
     }
   }
 

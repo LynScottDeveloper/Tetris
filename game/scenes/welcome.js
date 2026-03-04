@@ -1,4 +1,6 @@
 import { Scene } from "../../engine/scene.js";
+import { Text } from "../../engine/ui/Text.js";
+import { TextStyles } from "../../engine/ui/TextStyles.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
 
@@ -6,11 +8,45 @@ export class WelcomeScene extends Scene {
   constructor(options) {
     super("welcome", options);
     this.elapsed = 0;
+    this.components = [];
   }
 
   enter() {
     this.elapsed = 0;
     this.age = 0;
+    this.initializeComponents();
+  }
+
+  initializeComponents() {
+    this.components = [];
+    const theme = window.currentTheme || DarkTheme;
+    const card = this.card || { width: 480, height: 800, x: 0, y: 0 };
+    const w = card.width;
+    const h = card.height;
+
+    // "Vibe" subtitle
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.35,
+        width: w,
+        text: i18n.t("vibe"),
+        style: { ...TextStyles.body, color: theme.textMuted },
+        align: "center",
+      }),
+    );
+
+    // "Tetris" title
+    this.components.push(
+      new Text({
+        x: 0,
+        y: h * 0.45,
+        width: w,
+        text: i18n.t("tetris"),
+        style: { ...TextStyles.title, color: theme.accent },
+        align: "center",
+      }),
+    );
   }
 
   update(dt) {
@@ -27,26 +63,17 @@ export class WelcomeScene extends Scene {
 
     this.renderBackground(ctx, renderInfo, theme);
 
-    const w = card.width;
-    const h = card.height;
-    const x = card.x;
-    const y = card.y;
+    // Render text components
+    for (const component of this.components) {
+      component.card = card;
+      component.render(ctx);
+    }
 
-    ctx.fillStyle = theme.textMuted;
-    ctx.font =
-      '18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.textAlign = "center";
-    ctx.fillText(i18n.t("vibe"), x + w / 2, y + h * 0.4);
-
-    ctx.fillStyle = theme.accent;
-    ctx.font =
-      '48px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(i18n.t("tetris"), x + w / 2, y + h * 0.5);
-
+    // Fade overlay
     const fade = 1 - this.age / 0.4;
     if (fade > 0) {
       ctx.fillStyle = `rgba(0,0,0,${fade.toFixed(2)})`;
-      ctx.fillRect(x, y, w, h);
+      ctx.fillRect(card.x, card.y, card.width, card.height);
     }
   }
 }

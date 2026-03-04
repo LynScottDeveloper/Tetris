@@ -27,12 +27,14 @@ const canvas = document.getElementById("game-canvas");
 window.currentTheme = DarkTheme;
 
 window.soundManager = new SoundManager();
-window.soundManager.register("lineClear", SOUND_CONFIG.lineClear);
-window.soundManager.register(
-  "gameMusic",
-  SOUND_CONFIG.gameMusic.path,
-  SOUND_CONFIG.gameMusic.options,
-);
+window.soundManager.register("lineClear", SOUND_CONFIG.lineClear, {
+  volume: 0.8,
+});
+window.soundManager.register("gameMusic", SOUND_CONFIG.gameMusic.path, {
+  ...SOUND_CONFIG.gameMusic.options,
+  volume: 0.4,
+});
+window.soundManager.setMasterVolume(0.7); // Overall volume at 70%
 
 const sceneManager = new SceneManager();
 
