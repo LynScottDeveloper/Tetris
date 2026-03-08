@@ -3,9 +3,9 @@
  * Sets up scenes, sound, theme, and starts the game engine.
  */
 
-import { Engine } from "../engine/engine.js";
-import { SceneManager } from "../engine/sceneManager.js";
-import { SoundManager } from "../engine/soundManager.js";
+import { Engine } from "../../engine/engine.js";
+import { SceneManager } from "../../engine/sceneManager.js";
+import { SoundManager } from "../../engine/soundManager.js";
 import { WelcomeScene } from "./scenes/welcome.js";
 import { LanguageSelectorScene } from "./scenes/languageSelector.js";
 import { MenuScene } from "./scenes/menu.js";

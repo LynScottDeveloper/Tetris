@@ -24,8 +24,8 @@ export const GAME_LOOP_FPS = 60;
 export const GAME_LOOP_STEP = 1000 / GAME_LOOP_FPS; // milliseconds per frame
 
 // Sound Paths
-export const SOUND_LINE_CLEAR = "game/sounds/sound1.wav";
-export const SOUND_GAME_MUSIC = "game/sounds/song.mp3";
+export const SOUND_LINE_CLEAR = "sounds/sound1.wav";
+export const SOUND_GAME_MUSIC = "sounds/song.mp3";
 
 // Sound Configuration
 export const SOUND_CONFIG = {

@@ -3,7 +3,7 @@
  * Game-specific implementation using the engine's generic ParticleSystem
  * Creates falling Tetris shapes as a subtle background animation
  */
-import { ParticleSystem, Particle } from "../../engine/particles/index.js";
+import { ParticleSystem, Particle } from "../../../engine/particles/index.js";
 
 export class TetrominoBackgroundEffect {
   constructor() {

@@ -1,6 +1,6 @@
-import { Scene } from "../../engine/scene.js";
-import { Text } from "../../engine/ui/Text.js";
-import { TextStyles } from "../../engine/ui/TextStyles.js";
+import { Scene } from "../../../engine/scene.js";
+import { Text } from "../../../engine/ui/Text.js";
+import { TextStyles } from "../../../engine/ui/TextStyles.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
 

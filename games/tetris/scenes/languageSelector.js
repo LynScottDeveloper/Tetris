@@ -1,7 +1,7 @@
-import { Scene } from "../../engine/scene.js";
+import { Scene } from "../../../engine/scene.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
-import { Button, Text, TextStyles } from "../../engine/ui/index.js";
+import { Button, Text, TextStyles } from "../../../engine/ui/index.js";
 
 export class LanguageSelectorScene extends Scene {
   constructor(options) {

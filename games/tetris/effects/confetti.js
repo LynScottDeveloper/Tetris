@@ -3,7 +3,7 @@
  * Game-specific implementation using the engine's generic ParticleSystem
  * Creates celebratory confetti particle effects
  */
-import { ParticleSystem, Particle } from "../../engine/particles/index.js";
+import { ParticleSystem, Particle } from "../../../engine/particles/index.js";
 
 export class ConfettiSystem {
   constructor() {

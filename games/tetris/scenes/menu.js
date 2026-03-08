@@ -1,8 +1,8 @@
-import { Scene } from "../../engine/scene.js";
+import { Scene } from "../../../engine/scene.js";
 import { i18n } from "../i18n/translations.js";
 import { DarkTheme } from "../themes/dark.js";
 import { STORAGE_KEYS } from "../constants.js";
-import { Button, Text, TextStyles } from "../../engine/ui/index.js";
+import { Button, Text, TextStyles } from "../../../engine/ui/index.js";
 
 export class MenuScene extends Scene {
   constructor(options) {
@@ -104,7 +104,7 @@ export class MenuScene extends Scene {
         y: h - 36 - 16,
         width: 80,
         height: 36,
-        text: "SUDOKU",
+        text: "HUB",
         bgColor: "#8b5cf6",
         borderColor: theme.textPrimary,
         borderWidth: 1,
@@ -112,7 +112,7 @@ export class MenuScene extends Scene {
         fontSize: 14,
         fontWeight: "bold",
         onClick: () => {
-          window.open("bonus/sudoku_standalone.html", "_blank");
+          window.location.href = "../../index.html";
         },
       }),
     ];
